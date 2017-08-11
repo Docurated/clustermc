@@ -1,6 +1,6 @@
-lazy val clusterMW = (project in file(".")).
+lazy val clustermc = (project in file(".")).
   settings(
-    name := "workflows",
+    name := "Cluster Emcee",
     scalaVersion := "2.11.7",
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
