@@ -7,8 +7,17 @@ This is the project page for Cluster Emcee (clustermc). Clustermc distributes pr
 Cluster Emcee is developed and maintained by [Docurated](http://www.docurated.com/)
 
 Table of Contents
-
-[TOC]
+-------------
+  * [Definitions](#definitions)
+  * [Masters](#masters)
+  * [Structure and Supervision](#structure-and-supervision)
+    * [Message passing](#message-passing)
+    * [Supervision structure](#supervision-structure)
+  * [Workflow](#workflow)
+  * [WorkflowStep](#workflow-step)
+  * [WorkflowStep Worker](#workflowstep-worker)
+  * [Current deployments](#current-deployments)
+  * [Planned refinements](#planned-refinements)
 
 Definitions
 -------------
@@ -55,7 +64,7 @@ Worker-->WorkerMaster: Work complete/failed
 WorkerMaster-->WorkflowMaster: Workflow complete/failed
 WorkflowMaster->PollerMaster: Message complete/failed
 ```
-###Supervision Structure
+###Supervision structure
 ```sequence
 WorkflowMaster->PollerMaster: supervises
 PollerMaster->Pollers: supervises
