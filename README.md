@@ -74,14 +74,9 @@ The structure of the actor system is very deliberate to minimize concerns around
 
 ![Message passing](/images/message_passing.png)
 
-***Supervision structure***
+**Supervision structure**
 
-```sequence
-WorkflowMaster->PollerMaster: supervises
-PollerMaster->Pollers: supervises
-WorkflowMaster->WorkerMaster: supervises
-WorkerMaster->Workers: supervises
-```
+![Supervision](/images/supervision.png)
 
 ActorStack
 -----------
