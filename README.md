@@ -69,7 +69,11 @@ The "worker master" is responsible for distributing work among workers. Workers 
 Structure and Supervision
 -----------
 The structure of the actor system is very deliberate to minimize concerns around message handling and tracking and limit the amount of supervision by a single master. 
-### Message passing
+
+**Message passing**
+
+![Message passing](/images/message_passing.png)
+
 ```sequence
 WorkflowMaster->PollerMaster: Poll
 Note right of PollerMaster: Pop/advanced external work buffer
