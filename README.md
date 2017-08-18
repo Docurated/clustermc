@@ -50,17 +50,20 @@ Masters
 -----------
 There are three distinct masters in clustermc that control message flow and supervision. Clustermc utilizes [Akka Cluster Singletons](http://doc.akka.io/docs/akka/current/scala/guide/modules.html#cluster-singleton) for resiliency and accessibility (singletons can be referenced through a proxy by name instead of a full actor path).
 
-### Workflow Master
+**Workflow Master**
+
 The "workflow master" is the main actor in clustermc. It creates and supervises the other two masters, worker and poller. The workflow master will tell the poller when to poll based on capacity. It will build a workflow object from a polled message, and send the workflow object to the worker master for execution. The workflow master keeps track of all workflows currently executing. Execution is based on a schedule, iat each "tick" of one second it asks the worker master how much work it has buffered. If the worker master has little or no buffered work, it will tell the poller to poll for new work.
 
 It is a best practice to have the workflow master asynchronously build workflows from polled messages. This is due to the fact that there is a single workflow master, and often calculating the necessary steps for a workflow requires I/O, such as checking persistent storage for state. In clustermc the workflow master trait has an ActorRef for building workflows.
 
-### Poller Master
+**Poller Master**
+
 The "poller master" is responsible for calling to external buffers. It is common to have several different poller actors and types of pollers. Polling is not a precise term and represents the retrieval of a message of work to be done from any external system. In practice this has been queues, buffers or databases like SQS, Kafka and Redis.
 
 The poller master maintains a map of messages received from a given poller, so that it can direct completion, failure or additional work back to the source buffer for a given polled message.
 
-### Worker Master
+**Worker Master**
+
 The "worker master" is responsible for distributing work among workers. Workers register with the "worker master" on creation and then get work distributed to them when idle. The master is aware of all workers and work to be done. It supervises the workers and is able to redistribute or mark work as failed when a worker is terminated.
 
 Structure and Supervision
