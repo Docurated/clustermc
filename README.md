@@ -15,52 +15,58 @@ Table of Contents
     * [Supervision structure](#supervision-structure)
   * [Actor Stack](#actor-stack)
   * [Workflow](#workflow)
-  * [WorkflowStep](#workflow-step)
-  * [WorkflowStep Worker](#workflowstep-worker)
+  * [Workflow Step](#workflow-step)
+  * [Workflow Worker](#workflow-worker)
   * [Current deployments](#current-deployments)
   * [Planned refinements](#planned-refinements)
 
 Definitions
 -------------
-Master
-:   An actor that keeps track of work and workers. It registers and supervises workers, accepts work and distributes work among the workers.
+**Master**
 
-Worker
-:   An actor that actually executes a given piece of work
+An actor that keeps track of work and workers. It registers and supervises workers, accepts work and distributes work among the workers.
 
-Workflow
-:   A sequence of ordered, semi-dependent steps of worker execution.
+**Worker**
 
-WorkflowStep
-:   A single, isolated unit of processing execution. At its core, a step is a Prop definition of an Akka Actor. In keeping with the actor pattern, steps should not store or rely on internal state.
+An actor that actually executes a given piece of work
 
-Poller
-:   An actor retrieving work from an external source such as a database (e.g. Redis list), buffer (e.g. Kafka) or queue, (e.g. Rabbit).
+**Workflow**
 
-PolledMessage
-:   A unit of work that is retrieved from an external source and used to build a Workflow.
+A sequence of ordered, semi-dependent steps of worker execution.
+
+**Workflow Step**
+
+A single, isolated unit of processing execution. At its core, a step is a Prop definition of an Akka Actor. In keeping with the actor pattern, steps should not store or rely on internal state.
+
+**Poller**
+
+An actor retrieving work from an external source such as a database (e.g. Redis list), buffer (e.g. Kafka) or queue, (e.g. Rabbit).
+
+**PolledMessage**
+
+A unit of work that is retrieved from an external source and used to build a Workflow.
 
 Masters
 -----------
 There are three distinct masters in clustermc that control message flow and supervision. Clustermc utilizes [Akka Cluster Singletons](http://doc.akka.io/docs/akka/current/scala/guide/modules.html#cluster-singleton) for resiliency and accessibility (singletons can be referenced through a proxy by name instead of a full actor path).
 
-###Workflow Master
+### Workflow Master
 The "workflow master" is the main actor in clustermc. It creates and supervises the other two masters, worker and poller. The workflow master will tell the poller when to poll based on capacity. It will build a workflow object from a polled message, and send the workflow object to the worker master for execution. The workflow master keeps track of all workflows currently executing. Execution is based on a schedule, iat each "tick" of one second it asks the worker master how much work it has buffered. If the worker master has little or no buffered work, it will tell the poller to poll for new work.
 
 It is a best practice to have the workflow master asynchronously build workflows from polled messages. This is due to the fact that there is a single workflow master, and often calculating the necessary steps for a workflow requires I/O, such as checking persistent storage for state. In clustermc the workflow master trait has an ActorRef for building workflows.
 
-###Poller Master
+### Poller Master
 The "poller master" is responsible for calling to external buffers. It is common to have several different poller actors and types of pollers. Polling is not a precise term and represents the retrieval of a message of work to be done from any external system. In practice this has been queues, buffers or databases like SQS, Kafka and Redis.
 
 The poller master maintains a map of messages received from a given poller, so that it can direct completion, failure or additional work back to the source buffer for a given polled message.
 
-###Worker Master
+### Worker Master
 The "worker master" is responsible for distributing work among workers. Workers register with the "worker master" on creation and then get work distributed to them when idle. The master is aware of all workers and work to be done. It supervises the workers and is able to redistribute or mark work as failed when a worker is terminated.
 
 Structure and Supervision
 -----------
 The structure of the actor system is very deliberate to minimize concerns around message handling and tracking and limit the amount of supervision by a single master. 
-###Message passing
+### Message passing
 ```sequence
 WorkflowMaster->PollerMaster: Poll
 Note right of PollerMaster: Pop/advanced external work buffer
@@ -75,7 +81,7 @@ Worker-->WorkerMaster: Work complete/failed
 WorkerMaster-->WorkflowMaster: Workflow complete/failed
 WorkflowMaster->PollerMaster: Message complete/failed
 ```
-###Supervision structure
+### Supervision structure
 ```sequence
 WorkflowMaster->PollerMaster: supervises
 PollerMaster->Pollers: supervises
@@ -93,7 +99,7 @@ Workflow
 -----------
 A workflow is implemented as a polled message and a series of steps to execute against that message. For simplicity the workflow only stores a single starting step. It expects there to be no gaps or cycles in the chain of steps (see [planned refinements](#planned-refinements) below). Storing the starting step does not mean that a workflow cannot branch or re-join, instead it is common to have a no-op "start" step for purposes of creating a workflow, and then branching steps from the start.
 
-WorkflowStep
+Workflow Step
 -----------
 A workflow step comprises a Props specification for an actor, several lists (previous/next steps), and a record of completion. It has a list of "prerequisite steps" or steps that require completion before executing self, a list of "next if success" steps which can be executed if self completes without error, and "next if any" steps which can be executed regardless of the success of self completion.
 
@@ -101,7 +107,7 @@ Each step can find the next work in the chain by recursing through those three l
 
 Workflow Worker
 -----------
-The workflow workers receive a workflow and executes its steps in order. It launches an actor for each step Props specification, sends it the polled message and supervises the execution. If the worker is terminated or returns Failure, it marks that step as a failure. If there is available work, but no "next steps" it sends that workflow back to the worker master as failed work. Otherwise it sends the workflow as successful.
+The workflow workers receive a workflow and executes its steps in order. It launches an actor for each step Props specification, sends it the polled message and supervises the execution. If the worker is terminated or returns Failure, it marks that step as a failure. If there is available work, but no "next steps" it sends that workflow back to the worker master as failed work. Otherwise it sends the workflow as successful. Workflow workers send a polled message back in the success message, which could be an altered copy of the original polled message. It should be noted that, given the potential for parallel execution of sibling steps, ordering is not guaranteed and altering the polled message is only safe when there is a single step in the graph.
 
 Workflow workers extent the Worker trait that is general to the work-pulling pattern. Each worker self-registers with the Worker Master on creation by utilizing the ClusterSyngletonProxy for the master.
 
