@@ -74,21 +74,8 @@ The structure of the actor system is very deliberate to minimize concerns around
 
 ![Message passing](/images/message_passing.png)
 
-```sequence
-WorkflowMaster->PollerMaster: Poll
-Note right of PollerMaster: Pop/advanced external work buffer
-PollerMaster-->WorkflowMaster: Popped message
-Note left of WorkflowMaster: Compute a Workflow from message
-WorkflowMaster->WorkerMaster: Workfow to be done
-WorkerMaster->Worker: Work available
-Worker-->WorkerMaster: Request work
-WorkerMaster->Worker: Work
-Note right of Worker: Worker might create actors to complete work
-Worker-->WorkerMaster: Work complete/failed
-WorkerMaster-->WorkflowMaster: Workflow complete/failed
-WorkflowMaster->PollerMaster: Message complete/failed
-```
-### Supervision structure
+***Supervision structure***
+
 ```sequence
 WorkflowMaster->PollerMaster: supervises
 PollerMaster->Pollers: supervises
