@@ -1,25 +1,23 @@
 package com.docurated.clustermc.masters
 
-import akka.actor.Props
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
-import akka.routing.RoundRobinPool
-import com.docurated.clustermc.actors._
 import com.docurated.clustermc.masters.PollersProtocol.{MessageComplete, MessageFailed, MessageToQueue}
 import com.docurated.clustermc.protocol.MasterWorkerProtocol._
 import com.docurated.clustermc.protocol.PolledMessage
 import com.docurated.clustermc.util.ActorStack
-import com.docurated.clustermc.workflow.{Workflow, WorkflowBuilder}
+import com.docurated.clustermc.workflow.Workflow
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-class WorkflowMaster extends ActorStack with WithRiemannReporter {
+trait WorkflowMaster extends ActorStack {
   implicit val ec = context.dispatcher
+  context.system.scheduler.schedule(5 seconds, 1 seconds, self, HowBusy)
+
   import com.docurated.clustermc.masters.WorkflowMasterProtocol._
 
   private val WORK_TO_BUFFER = 100
   private val trackedWorkflows = mutable.Map.empty[PolledMessage, Workflow]
-  private val rand = scala.util.Random
   private var workerStatus = WorkerMasterStatus(0, 0, 0)
   private var pollerStatus = PollerMasterStatus(List(), 0)
 
@@ -35,11 +33,7 @@ class WorkflowMaster extends ActorStack with WithRiemannReporter {
       settings = ClusterSingletonProxySettings(context.system)),
     name = "pollerMasterProxy")
 
-  private val builderPool = context.actorOf(
-    Props[WorkflowBuilder].withRouter(new RoundRobinPool(5)),
-    name = "workflowBuilders")
-
-  context.system.scheduler.schedule(5 seconds, 1 seconds, self, HowBusy)
+  def buildWorkflowForMessage(msg: PolledMessage): Unit
 
   override def wrappedReceive: Receive = {
     case HowBusy =>
@@ -56,7 +50,7 @@ class WorkflowMaster extends ActorStack with WithRiemannReporter {
         logger.info(s"WorkflowMaster received $msg that is already tracked in a workflow, returning to queue")
         pollerMaster ! MessageFailed(msg)
       } else {
-        builderPool ! msg
+        buildWorkflowForMessage(msg)
       }
 
     case WorkflowIsDone(workflow) =>
@@ -65,7 +59,7 @@ class WorkflowMaster extends ActorStack with WithRiemannReporter {
         .foreach { kv =>
           logger.info(s"WorkflowMaster says workflow is done {}", kv)
           trackedWorkflows.remove(kv.msg)
-          builderPool ! workflow.msg
+          buildWorkflowForMessage(workflow.msg)
         }
 
     case WorkflowIsDoneWithError(workflow, error) =>
@@ -87,12 +81,12 @@ class WorkflowMaster extends ActorStack with WithRiemannReporter {
       pollerMaster ! msg
 
     case any =>
-      logger.info(s"WorkflowMaster received unknown message {}", any)
+      logger.debug("WorkflowMaster received unknown message {}", any)
 
   }
 
   private def isPolledMessageTracked(msg: PolledMessage): Boolean =
-    trackedWorkflows.get(msg).isDefined
+    trackedWorkflows.keys.exists(p => !msg.canWorkOnMessage(p))
 
   private def startWorkflow(msg: PolledMessage, workflow: Option[Workflow]) = workflow match {
     case Some(work) if !isPolledMessageTracked(msg) =>

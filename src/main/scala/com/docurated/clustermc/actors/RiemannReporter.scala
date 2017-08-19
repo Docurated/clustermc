@@ -2,7 +2,7 @@ package com.docurated.clustermc.actors
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorRef, Props}
 import com.docurated.clustermc.util.ActorStack
 import io.riemann.riemann.client.RiemannClient
 import org.joda.time.{DateTime, DateTimeZone}
@@ -89,8 +89,4 @@ trait RiemannReporter extends ActorStack {
 //        logger.info(s"Failed to send Riemann metric: $t")
     }
   }
-}
-
-trait WithRiemannReporter extends Actor {
-  val reporter = context.actorOf(Props[RiemannReporter].withMailbox("bounded-mailbox"))
 }
