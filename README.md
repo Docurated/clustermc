@@ -1,4 +1,4 @@
-
+![Build status](https://api.travis-ci.org/Docurated/clustermc.svg?branch=master)
 
 Cluster Emcee
 -------------
