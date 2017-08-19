@@ -106,10 +106,10 @@ Clustermc is currently use in production at Docurated. They run workflows for do
 
 Planned refinements
 -----------
-Better status/throughput measurement
-Backoff or back pressure when workflows start failing
-Add a notion priority of workflows for better scheduling
-Model and assert each calculated workflow is a DAG and execute against the steps based on a better notion of "next work"
+* Better status/throughput measurement
+* Backoff or back pressure when workflows start failing
+* Add a notion priority of workflows for better scheduling
+* Model and assert each calculated workflow is a DAG and execute against the steps based on a better notion of "next work"
 
 
 
