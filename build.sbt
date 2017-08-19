@@ -1,7 +1,17 @@
-lazy val clustermc = (project in file(".")).
+lazy val commonSettings = Seq(
+  organization := "com.docurated",
+  scalaVersion := "2.11.8",
+  resolvers ++= Seq(
+    "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    "clojars" at "https://clojars.org/repo"
+  )
+)
+
+lazy val root = (project in file(".")).
   settings(
+    commonSettings,
     name := "Cluster Emcee",
-    scalaVersion := "2.11.7",
+    version := "0.2",
     libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "ch.qos.logback" % "logback-core" % "1.2.3",
