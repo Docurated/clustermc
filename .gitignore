@@ -1,0 +1,20 @@
+*.class
+
+# intellij files
+*.iml
+.idea
+
+# eclipse files
+.project
+.classpath
+.settings
+
+# generic
+*~
+*.lock
+*.DS_Store
+*.swp
+*.out
+
+target/
+project/target
