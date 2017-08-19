@@ -52,7 +52,7 @@ There are three distinct masters in clustermc that control message flow and supe
 
 **Workflow Master**
 
-The "workflow master" is the main actor in clustermc. It creates and supervises the other two masters, worker and poller. The workflow master will tell the poller when to poll based on capacity. It will build a workflow object from a polled message, and send the workflow object to the worker master for execution. The workflow master keeps track of all workflows currently executing. Execution is based on a schedule, iat each "tick" of one second it asks the worker master how much work it has buffered. If the worker master has little or no buffered work, it will tell the poller to poll for new work.
+The "workflow master" is the main actor in clustermc. It creates and supervises the other two masters, worker and poller. The workflow master will tell the poller when to poll based on capacity. It will build a workflow object from a polled message, and send the workflow object to the worker master for execution. The workflow master keeps track of all workflows currently executing. Execution is based on a schedule, at each "tick" of one second it asks the worker master how much work it has buffered. If the worker master has little or no buffered work, it will tell the poller to poll for new work.
 
 It is a best practice to have the workflow master asynchronously build workflows from polled messages. This is due to the fact that there is a single workflow master, and often calculating the necessary steps for a workflow requires I/O, such as checking persistent storage for state. In clustermc the workflow master trait has an ActorRef for building workflows.
 
