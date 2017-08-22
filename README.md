@@ -102,7 +102,7 @@ Workflow workers extent the Worker trait that is general to the work-pulling pat
 
 Current deployments
 -----------
-Clustermc is currently use in production at Docurated. They run workflows for document analysis and index production on clusters with hundreds of pods and process tens of millions of documents through the system.
+Clustermc is currently used in production at Docurated. They run workflows for document analysis and index production on clusters with hundreds of pods and process tens of millions of documents through the system.
 
 Authors
 -----------
