@@ -106,13 +106,15 @@ Clustermc is currently use in production at Docurated. They run workflows for do
 
 Authors
 -----------
-Ryan Cooke ([GitHub](!https://github.com/debussyman), [LinkedIn](!https://www.linkedin.com/in/ryancooke/))
-Mike Patterson ([GitHub](!https://github.com/rpatters), [LinkedIn](!https://www.linkedin.com/in/mike-patterson-1592b723/))
-Erik Nygren ([GitHub](!https://github.com/underscorenygren), [LinkedIn](!https://www.linkedin.com/in/eriknygren/))
+Ryan Cooke ([GitHub](https://github.com/debussyman), [LinkedIn](https://www.linkedin.com/in/ryancooke/))
+
+Mike Patterson ([GitHub](https://github.com/rpatters), [LinkedIn](https://www.linkedin.com/in/mike-patterson-1592b723/))
+
+Erik Nygren ([GitHub](https://github.com/underscorenygren), [LinkedIn](https://www.linkedin.com/in/eriknygren/))
 
 Acknowledgements
 -----------
-Thanks to [William Huba](!https://github.com/hexedpackets) for guidance and [Robbie Kanarek](!https://www.linkedin.com/in/robert-kanarek-59150537/) for his tireless patience while scaling out clustermc.
+Thanks to [William Huba](https://github.com/hexedpackets) for guidance and [Robbie Kanarek](https://www.linkedin.com/in/robert-kanarek-59150537/) for his tireless patience while scaling out clustermc.
 
 Planned refinements
 -----------
