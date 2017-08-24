@@ -4,6 +4,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 
 trait PolledMessage {
   def id: String
+  def receipt: Any
   val createdAt: DateTime = DateTime.now(DateTimeZone.UTC)
 
   /**

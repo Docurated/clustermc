@@ -89,5 +89,5 @@ object PollersProtocol {
   case class PollerCreated(poller: ActorRef)
   case class MessagePopped(msg: PolledMessage, poll: Poll)
   case class Poll(requestor: ActorRef)
-  case class MessageToQueue(msg: MessagePopped, queueUrl: String)
+  case class MessageToQueue(msg: PolledMessage, queueUrl: String)
 }
