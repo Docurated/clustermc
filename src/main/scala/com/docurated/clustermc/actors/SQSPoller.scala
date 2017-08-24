@@ -56,7 +56,6 @@ class SQSPoller(config: SQSConfig, master: ActorRef, canPull: Boolean = true) ex
         case scala.util.Success(messages) =>
           messages
             .flatMap(toPolledMessage)
-            .flatten
             .foreach { msg =>
               logger.info("SQSPoller received {} from {}", msg, config.queueUrl)
               sendTo ! MessagePopped(msg, p)
