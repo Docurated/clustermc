@@ -1,54 +1,51 @@
 package com.docurated.clustermc.masters
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, Props}
+import akka.routing.RoundRobinPool
+import com.amazonaws.auth.AWSCredentialsProviderChain
+import com.docurated.clustermc.actors.{SQSConfig, SQSPoller}
 import com.docurated.clustermc.masters.WorkflowMasterProtocol.ReadyForMessage
 import com.docurated.clustermc.protocol.PolledMessage
 import com.docurated.clustermc.util.ActorStack
+import com.typesafe.config.ConfigFactory
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 sealed case class PollerMasterStatus(pollers: Seq[String], messagesInFlight: Int)
 
-class PollerMaster extends ActorStack {
+abstract class PollerMaster extends ActorStack {
   import com.docurated.clustermc.masters.PollersProtocol._
 
   private val messagesInFlight = mutable.Map.empty[PolledMessage, ActorRef]
   private val pollers = mutable.Set.empty[ActorRef]
 
-//  logger.info("Creating pollers")
-//  ConfigFactory.load()
-//    .getConfigList("pollers")
-//    .asScala
-//    .flatMap { pollConfig =>
-//      val canPull = pollConfig.getBoolean("pull")
-//      val q = pollConfig.getString("queueUrl")
-//      val num = if (pollConfig.hasPath("numPollers"))
-//        pollConfig.getInt("numPollers")
-//      else
-//          1
-//
-//      pollConfig.getString("type") match {
-//        case "sqs" =>
-//          val c = SQSConfig(new DocuratedAWSCredentialsProviderChain, q)
-//          val p = context.actorOf(
-//            RoundRobinPool(num).props(Props(classOf[SQSPoller], c, self, canPull)),
-//            s"sqs-$q-poller")
-//          Some(p)
-//        case "pq" =>
-//          val c = PQConfig(q, pollConfig.getString("host"))
-//          val p = context.actorOf(Props(classOf[PQPoller], c, self, canPull), s"pq-$q-poller")
-//          Some(p)
-//        case "salesforce" =>
-//          val p = context.actorOf(Props(classOf[SalesforceObjectPoller], self, canPull), "sfobject-poller")
-//          Some(p)
-//        case "rebuild-solr" =>
-//          val s = Option(pollConfig.getInt("startAt")).getOrElse(0)
-//          val e = Option(pollConfig.getInt("endAt")).getOrElse(Int.MaxValue)
-//          val p = context.actorOf(Props(classOf[RebuildSolrPoller], self, s, e, canPull), "rebuild-solr-poller")
-//          Some(p)
-//        case _ => None
-//      }
-//    }
+  createPollers()
+
+  protected def createPollers(): Unit = {
+      logger.info("Creating pollers")
+      ConfigFactory.load()
+        .getConfigList("pollers")
+        .asScala
+        .flatMap { pollConfig =>
+          val canPull = pollConfig.getBoolean("pull")
+          val q = pollConfig.getString("queueUrl")
+          val num = if (pollConfig.hasPath("numPollers"))
+            pollConfig.getInt("numPollers")
+          else
+              1
+
+          pollConfig.getString("type") match {
+            case "sqs" =>
+              val c = SQSConfig(new AWSCredentialsProviderChain(), "us-east-1", q)
+              val p = context.actorOf(
+                RoundRobinPool(num).props(Props(classOf[SQSPoller], c, self, canPull)),
+                s"sqs-$q-poller")
+              Some(p)
+            case _ => None
+          }
+        }
+  }
 
   override def wrappedReceive: Receive = {
     case MessageComplete(msg) =>

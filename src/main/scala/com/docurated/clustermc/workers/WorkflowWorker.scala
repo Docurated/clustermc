@@ -18,10 +18,8 @@ class WorkflowWorker extends Worker {
 
   override def postRestart(reason: Throwable): Unit = {
     super.postRestart(reason)
-    currentWorkflow = null
-    steps = null
-    currentWork = mutable.Map.empty[ActorRef, WorkflowStep]
-    master ! WorkIsDoneFailed(self, reason)
+    reset()
+    workFailed(ProcessingException("WorkflowWorker restarted"))
   }
 
   override val supervisorStrategy =
@@ -37,8 +35,7 @@ class WorkflowWorker extends Worker {
 
   override def doWork(work: Any): Unit = work match {
     case wf: Workflow =>
-      logger.debug(s"Received workflow $wf")
-      currentWork = mutable.Map.empty[ActorRef, WorkflowStep]
+      reset()
       currentWorkflow = wf
       steps = new WorkflowSteps(wf)
 
@@ -73,17 +70,18 @@ class WorkflowWorker extends Worker {
       startWorkForStep(steps.next)
       self ! DoMoreWork
     } else if (!steps.hasNext && currentWork.isEmpty && currentWorkflow != null) {
-      completeWorkflow()
+      completeWorkflow(steps.isFailed)
     }
   }
 
-  private def completeWorkflow() = {
-    if (steps.isFailed)
-      self ! WorkFailed(ProcessingException("Some workflow step failed"))
-    else
-      self ! WorkComplete(currentWorkflow)
+  private def completeWorkflow(failed: Boolean) = {
+    val cw = currentWorkflow
+    reset()
 
-    currentWorkflow = null
+    if (failed)
+      workFailed(ProcessingException("Some workflow step failed"))
+    else
+      workComplete(cw)
   }
 
   private def startWorkForStep(step: WorkflowStep) = {
@@ -101,6 +99,12 @@ class WorkflowWorker extends Worker {
       steps.complete(step, status)
       self ! DoMoreWork
     }
+  }
+
+  private def reset() = {
+    currentWork = mutable.Map.empty[ActorRef, WorkflowStep]
+    currentWorkflow = null
+    steps = null
   }
 
   private def nameForStep(step: WorkflowStep) =

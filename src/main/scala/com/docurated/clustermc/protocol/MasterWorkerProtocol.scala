@@ -3,20 +3,21 @@ package com.docurated.clustermc.protocol
 import akka.actor.ActorRef
 
 object MasterWorkerProtocol {
+  case class Work(requestor: ActorRef, job: Any)
+  case class WorkIsDone(job: Any)
+  case class WorkIsDoneFailed(job: Any, reason: Throwable)
 
   // Messages from Workers
-  case class WorkerCreated(worker: ActorRef)
+  case class WorkerExists(worker: ActorRef, work: Option[Work])
 
   case class WorkerRequestsWork(worker: ActorRef)
 
-  case class WorkIsDone(worker: ActorRef, work: Any)
+  case class WorkerIsDone(worker: ActorRef, work: Work)
 
-  case class WorkIsDoneFailed(worker: ActorRef, reason: Throwable)
-
-  case class WorkToQueue(work: Any, delay: Integer)
+  case class WorkerIsDoneFailed(worker: ActorRef, reason: Throwable, work: Option[Work])
 
   // Messages to Workers
-  case class WorkToBeDone(work: Any)
+  case class WorkToBeDone(work: Work)
 
   case object WorkIsReady
 

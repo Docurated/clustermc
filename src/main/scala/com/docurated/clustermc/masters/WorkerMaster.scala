@@ -1,27 +1,51 @@
 package com.docurated.clustermc.masters
 
-import akka.actor.{Actor, ActorRef, Terminated}
+import akka.actor.{ActorRef, Terminated}
 import com.docurated.clustermc.WorkflowTerminated
-import com.docurated.clustermc.workflow.Workflow
 import com.docurated.clustermc.masters.PollersProtocol.MessageToQueue
-import com.docurated.clustermc.masters.WorkflowMasterProtocol._
 import com.docurated.clustermc.protocol.MasterWorkerProtocol._
-import com.typesafe.scalalogging.LazyLogging
+import com.docurated.clustermc.util.{ActorStack, Tick}
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 
 sealed case class WorkerMasterStatus(activeWorkers: Int, idleWorkers: Int, numWorkToBeDone: Int)
 
-class WorkerMaster extends Actor with LazyLogging {
-  implicit val ec = context.dispatcher
-
-  private val workers = mutable.Map.empty[ActorRef, Option[(ActorRef, Workflow)]]
-  private val workToBeDone = mutable.Queue.empty[(ActorRef, Workflow)]
-
-  context.system.scheduler.schedule(5 seconds, 1 seconds, self, "CheckWork!")
+trait WorkerRegistration extends ActorStack {
+  protected val workers: mutable.Map[ActorRef, Option[Work]]
 
   override def receive: Receive = {
+    case WorkerExists(worker, work) =>
+      registerWorker(worker, work)
+
+    case x @ WorkerRequestsWork(worker) =>
+      registerWorker(worker, None)
+      super.receive(x)
+
+    case x @ WorkerIsDone(worker, result) =>
+      registerWorker(worker, Some(result))
+      super.receive(x)
+
+    case x @ WorkerIsDoneFailed(worker, _, work) =>
+      registerWorker(worker, work)
+      super.receive(x)
+
+    case any =>
+      super.receive(any)
+  }
+
+  private def registerWorker(worker: ActorRef, work: Option[Work]) = {
+    if (!workers.contains(worker)) {
+      context watch worker
+      workers += (worker -> work)
+    }
+  }
+}
+
+class WorkerMaster extends ActorStack with WorkerRegistration {
+  override protected val workers = mutable.Map.empty[ActorRef, Option[Work]]
+  private val workToBeDone = mutable.Queue.empty[Work]
+
+  override def wrappedReceive: Receive = {
     case "status" =>
       sender() ! status
 
@@ -30,54 +54,49 @@ class WorkerMaster extends Actor with LazyLogging {
       workers.
         get(worker).
         flatten.
-        foreach(work => work._1 ! WorkflowIsDoneWithError(work._2, WorkflowTerminated(worker.toString())))
+        foreach(work => work.requestor ! WorkIsDoneFailed(work.job, WorkflowTerminated(worker.toString())))
       workers.remove(worker)
 
-    case WorkerCreated(worker) if !workers.contains(worker) =>
-      logger.debug(s"Registering worker $worker")
-      context watch worker
-      workers += (worker -> None)
-
     case WorkerRequestsWork(worker) =>
-      if (workers.contains(worker) && workers(worker).isEmpty && workToBeDone.nonEmpty) {
+      if (workers(worker).isEmpty && workToBeDone.nonEmpty) {
         val work = workToBeDone.dequeue()
         workers += (worker -> Some(work))
-        worker ! WorkToBeDone(work._2)
+        worker ! WorkToBeDone(work)
       } else {
         worker ! NoWorkToBeDone
       }
 
-    case WorkIsDone(worker, result: Workflow) =>
+    case WorkerIsDone(worker, _) =>
       workers.
         get(worker).
         flatten.
-        foreach(work => work._1 ! WorkflowIsDone(result))
+        foreach(work => work.requestor ! WorkIsDone(work.job))
       workers += (worker -> None)
 
-    case WorkIsDoneFailed(worker, reason) =>
+    case WorkerIsDoneFailed(worker, reason, _) =>
       workers
         .get(worker)
         .flatten
-        .foreach(work => work._1 ! WorkflowIsDoneWithError(work._2, reason))
+        .foreach(work => work.requestor ! WorkIsDoneFailed(work.job, reason))
       workers += (worker -> None)
 
     case msg: MessageToQueue =>
       workers
         .get(sender())
         .flatten
-        .foreach(work => work._1 ! msg)
+        .foreach(work => work.requestor ! msg)
 
     case HowBusy =>
       sender() ! status
-
-    case work: Workflow =>
-      workToBeDone.enqueue((sender(), work))
-      self ! "Work!"
-
-    // Anything other than our own protocol is "work to be done"
-    // so check for work and maybe notify workers
-    case any =>
       notifyWorkers()
+
+    case work: Work =>
+      workToBeDone.enqueue(work)
+      notifyWorkers()
+      self ! Tick
+
+    case any =>
+      logger.warning("WorkerMaster received unknown message {}", any)
   }
 
   private def notifyWorkers(): Unit = {
@@ -86,8 +105,6 @@ class WorkerMaster extends Actor with LazyLogging {
       case _ =>
     }
   }
-
-  override def toString: String = self.path.toString
 
   private def status =
     WorkerMasterStatus(workers.count(t => t._2.nonEmpty), workers.count(t => t._2.isEmpty), workToBeDone.size)
