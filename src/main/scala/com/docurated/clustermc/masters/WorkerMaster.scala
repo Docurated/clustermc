@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, Terminated}
 import com.docurated.clustermc.WorkflowTerminated
 import com.docurated.clustermc.masters.PollersProtocol.MessageToQueue
 import com.docurated.clustermc.protocol.MasterWorkerProtocol._
-import com.docurated.clustermc.util.{ActorStack, Tick}
+import com.docurated.clustermc.util.ActorStack
 
 import scala.collection.mutable
 
@@ -72,6 +72,7 @@ class WorkerMaster extends ActorStack with WorkerRegistration {
         flatten.
         foreach(work => work.requestor ! WorkIsDone(work.job))
       workers += (worker -> None)
+      notifyWorkers()
 
     case WorkerIsDoneFailed(worker, reason, _) =>
       workers
@@ -79,6 +80,7 @@ class WorkerMaster extends ActorStack with WorkerRegistration {
         .flatten
         .foreach(work => work.requestor ! WorkIsDoneFailed(work.job, reason))
       workers += (worker -> None)
+      notifyWorkers()
 
     case msg: MessageToQueue =>
       workers
@@ -93,16 +95,16 @@ class WorkerMaster extends ActorStack with WorkerRegistration {
     case work: Work =>
       workToBeDone.enqueue(work)
       notifyWorkers()
-      self ! Tick
 
     case any =>
       logger.warning("WorkerMaster received unknown message {}", any)
   }
 
   private def notifyWorkers(): Unit = {
-    workers.foreach {
-      case (worker, m) if m.isEmpty => worker ! WorkIsReady
-      case _ =>
+    if (workToBeDone.nonEmpty) {
+      workers
+        .filter(w => w._2.isEmpty)
+        .foreach(w => w._1 ! WorkIsReady )
     }
   }
 

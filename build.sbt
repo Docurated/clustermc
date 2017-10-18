@@ -14,7 +14,7 @@ lazy val root = (project in file(".")).
     version := "0.2",
     libraryDependencies ++= Seq(
       "com.lightbend.akka" %% "akka-management-cluster-http" % "0.3",
-      "com.amazonaws" % "aws-java-sdk" % "1.11.180",
+      "com.amazonaws" % "aws-java-sdk-sqs" % "1.11.215",
       "com.typesafe.akka" %% "akka-actor" % "2.5.1",
       "com.typesafe.akka" %% "akka-remote" % "2.5.1",
       "com.typesafe.akka" %% "akka-slf4j" % "2.5.1",
