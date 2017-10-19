@@ -66,11 +66,8 @@ class WorkerMaster extends ActorStack with WorkerRegistration {
         worker ! NoWorkToBeDone
       }
 
-    case WorkerIsDone(worker, _) =>
-      workers.
-        get(worker).
-        flatten.
-        foreach(work => work.requestor ! WorkIsDone(work.job))
+    case WorkerIsDone(worker, work) =>
+      work.requestor ! WorkIsDone(work.job)
       workers += (worker -> None)
       notifyWorkers()
 
