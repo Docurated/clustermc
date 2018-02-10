@@ -4,7 +4,7 @@ import akka.actor.{Actor, actorRef2Scala}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.{CurrentClusterState, MemberRemoved, MemberUp}
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
-import com.docurated.clustermc.masters.PollersProtocol.MessageToQueue
+import com.docurated.clustermc.protocol.PollersProtocol.MessageToQueue
 import com.docurated.clustermc.protocol.MasterWorkerProtocol._
 import com.typesafe.scalalogging.LazyLogging
 
@@ -49,7 +49,7 @@ trait Worker extends Actor with LazyLogging {
     case WorkToBeDone(work) =>
       context.become(working(work))
       currentWork = Some(work)
-      doWork(work)
+      doWork(work.job)
 
     case NoWorkToBeDone =>
 

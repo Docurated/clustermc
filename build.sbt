@@ -26,7 +26,6 @@ lazy val root = (project in file(".")).
       "de.aktey.akka.k8s" %% "seednode-config" % "1.0.1",
       "io.riemann" % "riemann-java-client" % "0.4.5",
       "org.json4s" %% "json4s-native" % "3.5.0",
-      "org.json4s" %% "json4s-native" % "3.5.0",
       "org.json4s" %% "json4s-jackson" % "3.5.0",
       "org.json4s" %% "json4s-ext" % "3.5.0",
       "org.slf4j" % "slf4j-api" % "1.7.25",
@@ -34,3 +33,19 @@ lazy val root = (project in file(".")).
       "org.scalatest" %% "scalatest" % "2.2.4" % "test"
     )
   )
+
+lazy val sample = (project in file("sample")).
+  settings(
+    commonSettings,
+    name := "Cluster Emcee Sample Application",
+    version := "0.1",
+    libraryDependencies ++= Seq(
+      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "ch.qos.logback" % "logback-core" % "1.2.3",
+      "com.rometools" % "rome" % "1.9.0",
+      "commons-io" % "commons-io" % "2.4",
+      "joda-time" % "joda-time" % "2.9.9",
+      "org.jsoup" % "jsoup" % "1.11.1"
+    )
+  ).
+  dependsOn(root)

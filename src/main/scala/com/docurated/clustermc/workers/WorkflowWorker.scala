@@ -42,7 +42,7 @@ class WorkflowWorker extends Worker {
       self ! DoMoreWork
 
     case any =>
-      logger.debug(s"WorkflowWorker received unexpected message $any")
+      logger.debug(s"received unexpected message $any")
   }
 
   override def whileWorking(work: Any): Unit = work match {
@@ -62,7 +62,7 @@ class WorkflowWorker extends Worker {
       completeWork(worker, Right(Failure(WorkflowTerminated(s"$worker was terminated"))))
 
     case any =>
-      logger.debug(s"WorkflowWorker received unexpected message $any")
+      logger.debug(s"received unexpected message $any")
   }
 
   private def doMoreWork() = {

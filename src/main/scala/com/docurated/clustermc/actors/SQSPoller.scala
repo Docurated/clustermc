@@ -19,7 +19,7 @@ case class SQSJson(message: String, tags: Option[List[String]])
 case class SQSPolledMessage(id: String, message: String, tags: Option[List[String]], receipt: Message) extends PolledMessage
 
 class SQSPoller(config: SQSConfig, master: ActorRef, canPull: Boolean = true) extends Actor {
-  import com.docurated.clustermc.masters.PollersProtocol._
+  import com.docurated.clustermc.protocol.PollersProtocol._
   implicit val ec = context.dispatcher
   val logger: DiagnosticLoggingAdapter = Logging(this)
 

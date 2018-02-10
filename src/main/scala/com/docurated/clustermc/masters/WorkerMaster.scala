@@ -2,8 +2,8 @@ package com.docurated.clustermc.masters
 
 import akka.actor.{ActorRef, Terminated}
 import com.docurated.clustermc.WorkflowTerminated
-import com.docurated.clustermc.masters.PollersProtocol.MessageToQueue
 import com.docurated.clustermc.protocol.MasterWorkerProtocol._
+import com.docurated.clustermc.protocol.PollersProtocol.MessageToQueue
 import com.docurated.clustermc.util.ActorStack
 
 import scala.collection.mutable
@@ -94,7 +94,7 @@ class WorkerMaster extends ActorStack with WorkerRegistration {
       notifyWorkers()
 
     case any =>
-      logger.warning("WorkerMaster received unknown message {}", any)
+      logger.warning("received unknown message {}", any)
   }
 
   private def notifyWorkers(): Unit = {

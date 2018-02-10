@@ -9,6 +9,7 @@ Cluster Emcee is developed and maintained by [Docurated](http://www.docurated.co
 Table of Contents
 -------------
   * [Definitions](#definitions)
+  * [Sample](sample/README.md)
   * [Masters](#masters)
   * [Structure and Supervision](#structure-and-supervision)
     * [Message passing](#message-passing)

@@ -1,6 +1,6 @@
 package com.docurated.clustermc.actors
 
-import com.docurated.clustermc.masters.WorkflowMasterProtocol.{WorkflowIsDone, WorkflowIsDoneWithError}
+import com.docurated.clustermc.protocol.MasterWorkerProtocol.{WorkIsDone, WorkIsDoneFailed}
 import com.docurated.clustermc.protocol.PolledMessage
 import com.docurated.clustermc.util.ActorStack
 import com.docurated.clustermc.workflow.Workflow
@@ -13,7 +13,7 @@ trait WorkflowMasterSummary extends ActorStack {
   var summary = WorkflowSummary(0, DateTime.now(DateTimeZone.UTC), 0, 0)
 
   override def wrappedReceive = {
-    case x @ WorkflowIsDone(workflow) =>
+    case x @ WorkIsDone(workflow: Workflow) =>
       trackedWorkflows
         .get(workflow.msg)
         .foreach { kv =>
@@ -22,7 +22,7 @@ trait WorkflowMasterSummary extends ActorStack {
 
       super.receive(x)
 
-    case x @ WorkflowIsDoneWithError(workflow, _) =>
+    case x @ WorkIsDoneFailed(workflow: Workflow, _) =>
       trackedWorkflows.
         get(workflow.msg).
         foreach { kv =>

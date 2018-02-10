@@ -7,6 +7,15 @@ trait PolledMessage {
   def receipt: Any
   val createdAt: DateTime = DateTime.now(DateTimeZone.UTC)
 
+  override def toString = id
+
+  override def hashCode(): Int = id.hashCode
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case x: PolledMessage => this.id == x.id
+    case _ => super.equals(obj)
+  }
+
   /**
     * A test that indicates another message currently in a workflow precludes this one from
     * being in a concurrent workflow. For example, a given message may have a workflow that
