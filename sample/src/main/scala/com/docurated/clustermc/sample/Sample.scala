@@ -3,7 +3,7 @@ package com.docurated.clustermc.sample
 import akka.actor.{ActorSystem, CoordinatedShutdown, PoisonPill, Props}
 import akka.cluster.Cluster
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
-import com.docurated.clustermc.masters.{PollerMaster, WorkerMaster, WorkflowMaster}
+import com.docurated.clustermc.masters.WorkerMaster
 import com.docurated.clustermc.sample.pollers.LongReadsPollerMaster
 import com.docurated.clustermc.workers.WorkflowWorker
 import com.typesafe.config.ConfigFactory
@@ -60,8 +60,8 @@ object Sample extends App with LazyLogging {
   sys.addShutdownHook(CoordinatedShutdown(system).run())
 
   private def startWorkflowWorkers() = {
-    val numWorkers = if (config.hasPath("fileworker.workflow-workers-per-node"))
-      config.getInt("fileworker.workflow-workers-per-node")
+    val numWorkers = if (config.hasPath("clustermc.workflow-workers-per-node"))
+      config.getInt("clustermc.workflow-workers-per-node")
     else
       2
 

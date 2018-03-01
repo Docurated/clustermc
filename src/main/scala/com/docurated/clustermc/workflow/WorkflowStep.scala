@@ -17,22 +17,23 @@ import scala.collection.mutable
 * @param props The Props for the actor that can complete this step
 */
 case class WorkflowStep(id: String, props: Props) extends Comparable[WorkflowStep] {
-  private val prerequisites = mutable.MutableList.empty[WorkflowStep]
-  private val nextIfSuccess = mutable.MutableList.empty[WorkflowStep]
-  private val nextIfAny = mutable.MutableList.empty[WorkflowStep]
+  private var prerequisites = List[WorkflowStep]()
+  private var nextIfSuccess = List[WorkflowStep]()
+  private var nextIfAny = List[WorkflowStep]()
   private var complete: Option[Either[Success, Failure]] = None
 
   def addNextOnSuccess(step: WorkflowStep): Unit = {
     step.addPrerequisite(this)
-    nextIfSuccess += step
+    nextIfSuccess = nextIfSuccess :+ step
   }
 
   def addNextOnAny(step: WorkflowStep): Unit = {
     step.addPrerequisite(this)
-    nextIfAny += step
+    nextIfAny = nextIfAny :+ step
   }
 
-  def addPrerequisite(step: WorkflowStep): Unit = prerequisites += step
+  def addPrerequisite(step: WorkflowStep): Unit =
+    prerequisites = prerequisites :+ step
 
   def onSuccess(step: WorkflowStep): WorkflowStep = {
     addNextOnSuccess(step)
